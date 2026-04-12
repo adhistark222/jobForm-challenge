@@ -39,6 +39,7 @@ DB_NAME=jobform
 DB_USER=user
 DB_PASSWORD=password
 MYSQL_ROOT_PASSWORD=root
+DB_PORT=3307
 ```
 
 ### 2. Start services
@@ -57,6 +58,23 @@ No manual command is needed on a fresh setup.
 
 ```
 http://localhost:8080
+```
+
+### 5. Connect using MySQL Workbench (optional)
+
+Use these values from your host machine:
+
+- Hostname: localhost
+- Port: value of DB_PORT in your .env (default 3307)
+- Username: value of DB_USER
+- Password: value of DB_PASSWORD
+- Default schema: value of DB_NAME
+
+If you changed DB_PORT, restart containers with:
+
+```bash
+docker compose down
+docker compose up -d --build
 ```
 
 ---

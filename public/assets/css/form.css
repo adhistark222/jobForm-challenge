@@ -73,6 +73,12 @@ body {
   background: var(--color-bg-page);
 }
 
+@media (min-width: 1024px) {
+  body {
+    overflow: hidden;
+  }
+}
+
 img,
 svg {
   display: block;
@@ -108,12 +114,32 @@ button {
   grid-template-columns: minmax(260px, 38%) 1fr;
 }
 
+@media (min-width: 1024px) {
+  .page {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+
 .hero {
   background: var(--color-bg-hero);
   color: var(--color-text-on-dark);
   display: grid;
   place-items: center;
   padding: var(--space-2xl);
+}
+
+@media (min-width: 1024px) {
+  .hero,
+  .panel {
+    min-height: 0;
+  }
+
+  .panel {
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
 }
 
 .hero__content {
@@ -373,9 +399,79 @@ button {
   color: var(--color-text);
 }
 
+@media (max-height: 920px) and (min-width: 1024px) {
+  .hero {
+    padding: var(--space-xl);
+  }
+
+  .panel__inner {
+    padding-top: var(--space-lg);
+    padding-bottom: var(--space-lg);
+  }
+
+  .form-grid {
+    gap: var(--space-sm);
+  }
+
+  .form-hint {
+    margin-bottom: var(--space-2xs);
+  }
+
+  .form-control {
+    min-height: 2.5rem;
+  }
+
+  .form-control--textarea {
+    min-height: 8rem;
+  }
+
+  .budget-options {
+    margin-top: var(--space-xs);
+    gap: var(--space-sm);
+  }
+}
+
+@media (max-height: 780px) and (min-width: 1024px) {
+  .hero {
+    padding: var(--space-lg);
+  }
+
+  .hero__title {
+    font-size: clamp(1.35rem, 1.2vw + 0.95rem, 1.9rem);
+  }
+
+  .panel__inner {
+    padding-top: var(--space-md);
+    padding-bottom: var(--space-md);
+  }
+
+  .form-label {
+    margin-bottom: var(--space-2xs);
+  }
+
+  .form-control--textarea {
+    min-height: 6.5rem;
+  }
+
+  .form-actions {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .button {
+    min-height: 2.5rem;
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+  }
+}
+
 @media (max-width: 800px) {
   .page {
     grid-template-columns: 1fr;
+  }
+
+  body {
+    overflow: auto;
   }
 
   .hero {
