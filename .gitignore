@@ -10,3 +10,4 @@ coverage/
 *.bak
 *.tmp
 Project.md
+storage/uploads/*
