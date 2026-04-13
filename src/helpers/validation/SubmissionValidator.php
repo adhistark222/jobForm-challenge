@@ -17,8 +17,6 @@ class SubmissionValidator
 	// Hard limit matches php.ini upload_max_filesize and the hint shown in the form.
 	private const MAX_ATTACHMENT_SIZE_BYTES = 20 * 1024 * 1024;
 
-	// Budget values are the internal identifiers stored in the DB, not display labels.
-	// Validated against this allowlist to prevent arbitrary values being inserted.
 	private array $allowedBudgets = ['5_99', '100_249', '250_499'];
 
 	// Two-layer file validation: extension check first (fast, no disk I/O),
@@ -59,7 +57,6 @@ class SubmissionValidator
 			$this->regions = [];
 			return;
 		}
-		// Support both wrapped {"countries": {...}} and flat {"USA": [...]} shapes.
 		if (isset($decoded['countries']) && is_array($decoded['countries'])) {
 			$this->regions = $decoded['countries'];
 		} else {
@@ -86,7 +83,6 @@ class SubmissionValidator
 	{
 		$errors = [];
 
-		// Trim all scalar fields upfront so individual checks don't repeat it.
 		$values = [
 			'job_title' => trim((string) ($input['job_title'] ?? '')),
 			'job_small_script' => trim((string) ($input['job_small_script'] ?? '')),
@@ -101,7 +97,6 @@ class SubmissionValidator
 			$errors['job_title'] = 'Job title must be 120 characters or fewer.';
 		}
 
-		// Script is optional — only validate length if something was entered.
 		if (mb_strlen($values['job_small_script']) > 1000) {
 			$errors['job_small_script'] = 'Job small script must be 1000 characters or fewer.';
 		}
@@ -117,7 +112,6 @@ class SubmissionValidator
 		if ($values['state_province'] === '') {
 			$errors['state_province'] = 'State or province is required.';
 		} elseif (!isset($errors['country'])) {
-			// Only cross-validate state if country was itself valid — avoids misleading errors.
 			$validRegions = $this->regions[$values['country']] ?? [];
 			if (!in_array($values['state_province'], $validRegions, true)) {
 				$errors['state_province'] = 'State or province does not match the selected country.';
@@ -130,8 +124,6 @@ class SubmissionValidator
 			$errors['budget'] = 'Budget selection is invalid.';
 		}
 
-		// File validation is extracted to its own method — it has several distinct failure
-		// modes (missing, wrong type, too large) and its own return shape.
 		$attachment = $this->validateAttachment($files['attachment'] ?? null, $errors);
 
 		return [
@@ -157,7 +149,6 @@ class SubmissionValidator
 			'attachment_size' => null,
 		];
 
-		// UPLOAD_ERR_NO_FILE means the field was left empty — valid for an optional field.
 		if (!is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
 			return $result;
 		}
@@ -175,7 +166,6 @@ class SubmissionValidator
 
 		$allowedTypeHint = 'Allowed types: PDF, DOC, DOCX, PPT, PPTX, TXT, RTF, JPG, JPEG, PNG, WEBP.';
 
-		// Extension check: quick filter before spending I/O on MIME detection.
 		$originalName = (string) ($file['name'] ?? '');
 		$extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
 		if ($extension === '' || !in_array($extension, $this->allowedExtensions, true)) {
@@ -183,9 +173,6 @@ class SubmissionValidator
 			return $result;
 		}
 
-		// MIME check via finfo reads the actual file header — a renamed .exe with a .pdf
-		// extension would still fail here. This is deeper than relying on the browser-provided
-		// MIME type, which can be trivially spoofed.
 		$finfo = new finfo(FILEINFO_MIME_TYPE);
 		$mime = (string) $finfo->file((string) ($file['tmp_name'] ?? ''));
 		if ($mime !== '' && !in_array($mime, $this->allowedMimeTypes, true)) {
