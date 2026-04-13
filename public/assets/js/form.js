@@ -1,6 +1,28 @@
+/**
+ * form.js — progressive enhancement layer for the job submission form.
+ *
+ * The form is fully functional without this script (server renders all fields,
+ * validates on POST, and returns errors inline). This file exists purely to improve
+ * the experience when JS is available:
+ *
+ *   - Dependent country/state dropdown: the server renders all states grouped by
+ *     country via <optgroup>. JS replaces that with a filtered list for the selected
+ *     country, making the picker much shorter and easier to use.
+ *
+ *   - Live word counter on the script textarea.
+ *
+ *   - Client-side validation on submit: catches the most common errors before a round
+ *     trip, and — critically — blocks oversized file uploads before they reach the
+ *     server. PHP silently discards $_POST when post_max_size is exceeded, which would
+ *     lose all other field values. JS is the only practical interception point.
+ *
+ * All validation rules here mirror SubmissionValidator.php. The server always
+ * re-validates — JS is UX, not a security boundary.
+ */
 (() => {
 	"use strict";
 
+	// Guard: if the form isn't on this page, nothing below should run.
 	const form = document.querySelector(".job-form");
 	if (!form) {
 		return;
@@ -13,6 +35,9 @@
 	const stateProvince = document.getElementById("state_province");
 	const attachment = document.getElementById("attachment");
 
+	// Regions data is embedded in the page by PHP as a JSON <script> tag.
+	// This avoids an extra HTTP request and keeps JS consistent with what
+	// the server used to render the initial <optgroup> list.
 	const regionData = parseRegionsData();
 
 	function parseRegionsData() {
@@ -27,14 +52,22 @@
 				return {};
 			}
 
+			// Handle both {"countries": {...}} wrapper shape and flat {"USA": [...]} shape
+			// so this stays compatible if the JSON structure ever changes.
 			return typeof parsed.countries === "object" && parsed.countries !== null
 				? parsed.countries
 				: parsed;
 		} catch (_error) {
+			// Malformed JSON — degrade gracefully by returning an empty object.
+			// The server-rendered <optgroup> list is still present in the DOM at this point.
 			return {};
 		}
 	}
 
+	/**
+	 * Replaces the server-rendered <optgroup> country list with a flat JS-managed list.
+	 * Preserves the previously selected value so error repopulation still works.
+	 */
 	function populateCountries() {
 		if (!country) {
 			return;
@@ -63,6 +96,12 @@
 		});
 	}
 
+	/**
+	 * Writes an error message for a field and marks it aria-invalid.
+	 * Passing an empty string clears the error and resets aria state.
+	 * Both the visual error paragraph and the aria attribute are updated together
+	 * so screen readers and sighted users get the same information.
+	 */
 	function setError(fieldName, message) {
 		const input = form.querySelector(`[name="${fieldName}"]`);
 		const errorNode = document.getElementById(`${fieldName}_error`);
@@ -90,6 +129,12 @@
 		scriptCount.textContent = `${words} word${words === 1 ? "" : "s"}`;
 	}
 
+	/**
+	 * Rebuilds the state/province dropdown for the given country.
+	 * When a country is selected, shows only that country's states.
+	 * When no country is selected, disables the dropdown and prompts the user to pick first.
+	 * This replaces the server's <optgroup> approach with a filtered flat list.
+	 */
 	function repopulateRegionsForCountry(selectedCountry) {
 		if (!stateProvince) {
 			return;
@@ -111,6 +156,7 @@
 			stateProvince.appendChild(option);
 		});
 
+		// Disable the dropdown with no valid options so it's not submitted as an empty value.
 		stateProvince.disabled = options.length === 0;
 		stateProvince.value = "";
 	}
@@ -168,6 +214,7 @@
 			return true;
 		}
 
+		// A disabled dropdown means no country was selected — treat as missing.
 		if (stateProvince.disabled || stateProvince.value === "") {
 			setError("state_province", "State or province is required.");
 			return false;
@@ -188,6 +235,9 @@
 			return true;
 		}
 
+		// This is the critical check: block the request before it reaches the server.
+		// If a file over post_max_size is submitted, PHP discards the entire request body
+		// (including all other field values). There is no way to recover them server-side.
 		const maxBytes = 20 * 1024 * 1024;
 		if (file.size > maxBytes) {
 			setError("attachment", "Attachment must be 20MB or smaller.");
@@ -222,19 +272,11 @@
 		return results.every(Boolean);
 	}
 
-	function clearAllValidationUI() {
-		const errorNodes = form.querySelectorAll(".form-error");
-		errorNodes.forEach((node) => {
-			node.textContent = "";
-			node.hidden = true;
-		});
-
-		const invalidNodes = form.querySelectorAll("[aria-invalid]");
-		invalidNodes.forEach((node) => {
-			node.setAttribute("aria-invalid", "false");
-		});
-	}
-
+	/**
+	 * Moves focus to the first invalid required field after a failed submit attempt.
+	 * Improves keyboard and screen reader accessibility — the user lands directly
+	 * on the first problem rather than having to tab through the form to find it.
+	 */
 	function focusFirstInvalidRequiredField() {
 		const requiredFieldOrder = ["job_title", "country", "state_province", "budget"];
 
@@ -251,8 +293,11 @@
 		}
 	}
 
-	clearAllValidationUI();
+	// --- Event wiring ---
 
+	// populateCountries / repopulateRegionsForCountry run immediately on load so
+	// the JS-managed dropdowns replace the server-rendered <optgroup> lists before
+	// the user sees them. Preserves any pre-selected value from error repopulation.
 	if (script) {
 		script.addEventListener("input", () => {
 			updateWordCount();
@@ -289,19 +334,12 @@
 	});
 
 	form.addEventListener("submit", (event) => {
+		// Prevent submission if any field is invalid. focusFirstInvalidRequiredField
+		// guides the user to the first problem after all errors are displayed.
 		if (!validateAll()) {
 			event.preventDefault();
 			focusFirstInvalidRequiredField();
 		}
 	});
 
-	form.addEventListener("reset", () => {
-		window.setTimeout(() => {
-			clearAllValidationUI();
-			updateWordCount();
-			if (country) {
-				repopulateRegionsForCountry(country.value);
-			}
-		}, 0);
-	});
 })();
