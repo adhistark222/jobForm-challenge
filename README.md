@@ -178,7 +178,6 @@ Pattern: Server-rendered MVC with progressive enhancement. The form works fully 
 ## Known Improvements / Deferred Items
 
 - Email confirmation to jobform@voices.com: Placeholder only, SubmissionMailer.php exists but sends nothing
-- Old input value re-population on error: Controller passes $old array to view; view bindings not yet wired
 - Upload storage failures are surfaced as form errors while technical details are written to server logs
 
 ---
@@ -189,3 +188,5 @@ Pattern: Server-rendered MVC with progressive enhancement. The form works fully 
 - JSON for regions instead of a DB table — static data, no relational need, simpler
 - No framework — matches assignment requirement, keeps the codebase explainable in an interview
 - No migration framework — flat SQL files keep setup simple and interview-friendly
+- JavaScript introduced as a progressive enhancement, not a baseline requirement — the form started as a pure server-rendered PHP implementation. During testing, a hard PHP limitation surfaced: when a file upload exceeds `post_max_size`, PHP discards the entire request body before user code runs. `$_POST` and `$_FILES` are both empty, making it impossible to retain old field values or validate any other fields server-side. No amount of PHP code can recover the lost data at that point. To solve this at the boundary where it actually matters — before the request is sent — client-side file size validation in JavaScript was introduced. Since JS was already being loaded, a live word counter for the script field was added as a low-cost usability aid. The form still works fully without JavaScript; JS is purely an enhancement layer on top of the server-rendered baseline.
+- Reset control uses an anchor (`href="/"`) styled as a button instead of an HTML reset button. This intentionally performs a fresh GET request so the form clears reliably after validation errors in both JavaScript-enabled and JavaScript-disabled flows.

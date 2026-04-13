@@ -17,22 +17,11 @@
     <section class="panel">
       <div class="panel__inner">
         <p>Form submitted successfully.</p>
-        <p>Click anywhere to go back to the form.</p>
         <p>
           <a class="button button--primary" href="/">Back to form</a>
         </p>
       </div>
     </section>
   </main>
-  <script>
-    document.addEventListener('click', function (event) {
-      const target = event.target;
-      if (target instanceof HTMLAnchorElement) {
-        return;
-      }
-
-      window.location.href = '/';
-    });
-  </script>
 </body>
 </html>

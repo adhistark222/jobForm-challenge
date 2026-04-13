@@ -6,6 +6,9 @@ RUN apt-get update \
 
 RUN docker-php-ext-install pdo pdo_mysql mbstring
 
+# PHP upload/post size limits — must match app's 20MB file cap
+COPY php.ini /usr/local/etc/php/conf.d/uploads.ini
+
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
 

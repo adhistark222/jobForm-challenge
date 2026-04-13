@@ -1,12 +1,3 @@
-<?php
-$selectedCountry = trim((string) ($old['country'] ?? ''));
-$selectedStateProvince = trim((string) ($old['state_province'] ?? ''));
-$countryNames = array_keys(is_array($regions ?? null) ? $regions : []);
-sort($countryNames);
-$stateOptions = isset($regions[$selectedCountry]) && is_array($regions[$selectedCountry])
-  ? $regions[$selectedCountry]
-  : [];
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -51,10 +42,10 @@ $stateOptions = isset($regions[$selectedCountry]) && is_array($regions[$selected
                 placeholder="For example, '30 Second Radio Spot' or 'Corporate Training Video'"
                 maxlength="120"
                 aria-describedby="job_title_hint job_title_error"
-                aria-invalid="false"
-                value=""
+                aria-invalid="<?php echo isset($errors['job_title']) ? 'true' : 'false'; ?>"
+                value="<?php echo htmlspecialchars($jobTitleValue, ENT_QUOTES, 'UTF-8'); ?>"
               />
-              <p id="job_title_error" class="form-error" aria-live="polite" hidden></p>
+              <p id="job_title_error" class="form-error" aria-live="polite"<?php echo isset($errors['job_title']) ? '' : ' hidden'; ?>><?php echo htmlspecialchars((string) ($errors['job_title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
             </div>
 
             <!-- Script -->
@@ -72,10 +63,10 @@ $stateOptions = isset($regions[$selectedCountry]) && is_array($regions[$selected
                 rows="6"
                 maxlength="1000"
                 aria-describedby="job_small_script_count job_small_script_error"
-                aria-invalid="false"
-              ></textarea>
+                aria-invalid="<?php echo isset($errors['job_small_script']) ? 'true' : 'false'; ?>"
+              ><?php echo htmlspecialchars($scriptValue, ENT_QUOTES, 'UTF-8'); ?></textarea>
               <div class="form-meta-row">
-                <p id="job_small_script_error" class="form-error" aria-live="polite" hidden></p>
+                <p id="job_small_script_error" class="form-error" aria-live="polite"<?php echo isset($errors['job_small_script']) ? '' : ' hidden'; ?>><?php echo htmlspecialchars((string) ($errors['job_small_script'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
                 <p id="job_small_script_count" class="form-counter" aria-live="polite">0 words</p>
               </div>
             </div>
@@ -91,7 +82,7 @@ $stateOptions = isset($regions[$selectedCountry]) && is_array($regions[$selected
                 name="country"
                 required
                 aria-describedby="country_error"
-                aria-invalid="false"
+                aria-invalid="<?php echo isset($errors['country']) ? 'true' : 'false'; ?>"
               >
                 <option value="">Select country</option>
                 <?php foreach ($countryNames as $countryName): ?>
@@ -100,7 +91,7 @@ $stateOptions = isset($regions[$selectedCountry]) && is_array($regions[$selected
                   </option>
                 <?php endforeach; ?>
               </select>
-              <p id="country_error" class="form-error" aria-live="polite" hidden></p>
+              <p id="country_error" class="form-error" aria-live="polite"<?php echo isset($errors['country']) ? '' : ' hidden'; ?>><?php echo htmlspecialchars((string) ($errors['country'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
             </div>
 
             <!-- Province / State -->
@@ -114,17 +105,20 @@ $stateOptions = isset($regions[$selectedCountry]) && is_array($regions[$selected
                 name="state_province"
                 required
                 aria-describedby="state_province_error"
-                aria-invalid="false"
-                <?php echo $stateOptions === [] ? 'disabled' : ''; ?>
+                aria-invalid="<?php echo isset($errors['state_province']) ? 'true' : 'false'; ?>"
               >
-                <option value=""><?php echo $stateOptions === [] ? 'Select country first' : 'Select state/province'; ?></option>
-                <?php foreach ($stateOptions as $stateOption): ?>
-                  <option value="<?php echo htmlspecialchars($stateOption, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $selectedStateProvince === $stateOption ? ' selected' : ''; ?>>
-                    <?php echo htmlspecialchars($stateOption, ENT_QUOTES, 'UTF-8'); ?>
-                  </option>
+                <option value="">Select state/province</option>
+                <?php foreach ($stateOptions as $groupLabel => $groupItems): ?>
+                  <optgroup label="<?php echo htmlspecialchars((string) $groupLabel, ENT_QUOTES, 'UTF-8'); ?>">
+                    <?php foreach ($groupItems as $stateOption): ?>
+                      <option value="<?php echo htmlspecialchars((string) $stateOption, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $selectedStateProvince === (string) $stateOption ? ' selected' : ''; ?>>
+                        <?php echo htmlspecialchars((string) $stateOption, ENT_QUOTES, 'UTF-8'); ?>
+                      </option>
+                    <?php endforeach; ?>
+                  </optgroup>
                 <?php endforeach; ?>
               </select>
-              <p id="state_province_error" class="form-error" aria-live="polite" hidden></p>
+              <p id="state_province_error" class="form-error" aria-live="polite"<?php echo isset($errors['state_province']) ? '' : ' hidden'; ?>><?php echo htmlspecialchars((string) ($errors['state_province'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
             </div>
 
             <!-- Attachment -->
@@ -143,9 +137,9 @@ $stateOptions = isset($regions[$selectedCountry]) && is_array($regions[$selected
                 type="file"
                 accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.rtf,.jpg,.jpeg,.png,.webp"
                 aria-describedby="attachment_hint attachment_error"
-                aria-invalid="false"
+                aria-invalid="<?php echo isset($errors['attachment']) ? 'true' : 'false'; ?>"
               />
-              <p id="attachment_error" class="form-error" aria-live="polite" hidden></p>
+              <p id="attachment_error" class="form-error" aria-live="polite"<?php echo isset($errors['attachment']) ? '' : ' hidden'; ?>><?php echo htmlspecialchars((string) ($errors['attachment'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
             </div>
 
             <!-- Budget -->
@@ -163,7 +157,8 @@ $stateOptions = isset($regions[$selectedCountry]) && is_array($regions[$selected
                     type="radio"
                     value="5_99"
                     required
-                    aria-invalid="false"
+                    aria-invalid="<?php echo isset($errors['budget']) ? 'true' : 'false'; ?>"
+                    <?php echo $selectedBudget === '5_99' ? 'checked' : ''; ?>
                   />
                   <span>$5 - $99</span>
                 </label>
@@ -175,7 +170,8 @@ $stateOptions = isset($regions[$selectedCountry]) && is_array($regions[$selected
                     type="radio"
                     value="100_249"
                     required
-                    aria-invalid="false"
+                    aria-invalid="<?php echo isset($errors['budget']) ? 'true' : 'false'; ?>"
+                    <?php echo $selectedBudget === '100_249' ? 'checked' : ''; ?>
                   />
                   <span>$100 - $249</span>
                 </label>
@@ -187,18 +183,19 @@ $stateOptions = isset($regions[$selectedCountry]) && is_array($regions[$selected
                     type="radio"
                     value="250_499"
                     required
-                    aria-invalid="false"
+                    aria-invalid="<?php echo isset($errors['budget']) ? 'true' : 'false'; ?>"
+                    <?php echo $selectedBudget === '250_499' ? 'checked' : ''; ?>
                   />
                   <span>$250 - $499</span>
                 </label>
               </div>
 
-              <p id="budget_error" class="form-error" aria-live="polite" hidden></p>
+              <p id="budget_error" class="form-error" aria-live="polite"<?php echo isset($errors['budget']) ? '' : ' hidden'; ?>><?php echo htmlspecialchars((string) ($errors['budget'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
             </fieldset>
 
             <!-- Actions -->
             <div class="form-actions span-all">
-              <button class="button button--secondary" type="reset">Reset</button>
+              <a class="button button--secondary" href="/">Reset</a>
               <button class="button button--primary" type="submit">Submit</button>
             </div>
           </div>

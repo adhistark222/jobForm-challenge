@@ -44,6 +44,17 @@ class FormController
             ];
         }
 
+        $contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+        if ($contentLength > 0 && empty($post) && empty($files)) {
+            return [
+                'status' => 422,
+                'errors' => ['attachment' => 'Your file exceeds the 20MB limit. Please choose a smaller file and fill in the form again.'],
+                'old' => [],
+                'csrf_token' => $session['csrf_token'],
+                'success' => false,
+            ];
+        }
+
         if (($post['csrf_token'] ?? '') !== $session['csrf_token']) {
             return [
                 'status' => 422,
@@ -153,11 +164,64 @@ class FormController
             exit;
         }
 
-        $errors = $state['errors'] ?? [];
-        $old = $state['old'] ?? [];
-        $csrfToken = $state['csrf_token'] ?? '';
-        $regions = $this->validator->getRegions();
+        $viewData = $this->buildViewData($state);
+        $errors             = $viewData['errors'];
+        $old                = $viewData['old'];
+        $csrfToken          = $viewData['csrfToken'];
+        $regions            = $viewData['regions'];
+        $jobTitleValue      = $viewData['jobTitleValue'];
+        $scriptValue        = $viewData['scriptValue'];
+        $selectedBudget     = $viewData['selectedBudget'];
+        $selectedCountry    = $viewData['selectedCountry'];
+        $selectedStateProvince = $viewData['selectedStateProvince'];
+        $countryNames       = $viewData['countryNames'];
+        $stateOptions       = $viewData['stateOptions'];
 
         require __DIR__ . '/../views/form.php';
+    }
+
+    private function buildViewData(array $state): array
+    {
+        $errors = is_array($state['errors'] ?? null) ? $state['errors'] : [];
+        $old = is_array($state['old'] ?? null) ? $state['old'] : [];
+        $regions = $this->validator->getRegions();
+
+        $selectedCountry = trim((string) ($old['country'] ?? ''));
+        $selectedStateProvince = trim((string) ($old['state_province'] ?? ''));
+
+        $countryNames = array_keys($regions);
+        sort($countryNames);
+
+        return [
+            'errors' => $errors,
+            'old' => $old,
+            'csrfToken' => (string) ($state['csrf_token'] ?? ''),
+            'regions' => $regions,
+            'jobTitleValue' => (string) ($old['job_title'] ?? ''),
+            'scriptValue' => (string) ($old['job_small_script'] ?? ''),
+            'selectedBudget' => trim((string) ($old['budget'] ?? '')),
+            'selectedCountry' => $selectedCountry,
+            'selectedStateProvince' => $selectedStateProvince,
+            'countryNames' => $countryNames,
+            'stateOptions' => $this->buildStateOptions($regions, $countryNames, $selectedCountry),
+        ];
+    }
+
+    private function buildStateOptions(array $regions, array $countryNames, string $selectedCountry): array
+    {
+        if ($selectedCountry !== '' && isset($regions[$selectedCountry]) && is_array($regions[$selectedCountry])) {
+            return [$selectedCountry => $regions[$selectedCountry]];
+        }
+
+        $grouped = [];
+        foreach ($countryNames as $countryName) {
+            $options = $regions[$countryName] ?? [];
+            if (!is_array($options) || count($options) === 0) {
+                continue;
+            }
+            $grouped[$countryName] = $options;
+        }
+
+        return $grouped;
     }
 }

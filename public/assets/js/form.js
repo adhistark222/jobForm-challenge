@@ -222,19 +222,6 @@
 		return results.every(Boolean);
 	}
 
-	function clearAllValidationUI() {
-		const errorNodes = form.querySelectorAll(".form-error");
-		errorNodes.forEach((node) => {
-			node.textContent = "";
-			node.hidden = true;
-		});
-
-		const invalidNodes = form.querySelectorAll("[aria-invalid]");
-		invalidNodes.forEach((node) => {
-			node.setAttribute("aria-invalid", "false");
-		});
-	}
-
 	function focusFirstInvalidRequiredField() {
 		const requiredFieldOrder = ["job_title", "country", "state_province", "budget"];
 
@@ -250,8 +237,6 @@
 			break;
 		}
 	}
-
-	clearAllValidationUI();
 
 	if (script) {
 		script.addEventListener("input", () => {
@@ -295,13 +280,4 @@
 		}
 	});
 
-	form.addEventListener("reset", () => {
-		window.setTimeout(() => {
-			clearAllValidationUI();
-			updateWordCount();
-			if (country) {
-				repopulateRegionsForCountry(country.value);
-			}
-		}, 0);
-	});
 })();

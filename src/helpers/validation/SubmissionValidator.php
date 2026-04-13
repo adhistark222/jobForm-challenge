@@ -26,12 +26,22 @@ class SubmissionValidator
 
 	public function __construct(string $regionsPath)
 	{
-		$json = @file_get_contents($regionsPath);
-		$decoded = $json !== false ? json_decode($json, true) : null;
-		if (is_array($decoded) && isset($decoded['countries']) && is_array($decoded['countries'])) {
+		$json = file_get_contents($regionsPath);
+		if ($json === false) {
+			error_log('SubmissionValidator: could not read regions file: ' . $regionsPath);
+			$this->regions = [];
+			return;
+		}
+		$decoded = json_decode($json, true);
+		if (!is_array($decoded)) {
+			error_log('SubmissionValidator: invalid JSON in regions file: ' . $regionsPath);
+			$this->regions = [];
+			return;
+		}
+		if (isset($decoded['countries']) && is_array($decoded['countries'])) {
 			$this->regions = $decoded['countries'];
 		} else {
-			$this->regions = is_array($decoded) ? $decoded : [];
+			$this->regions = $decoded;
 		}
 	}
 
